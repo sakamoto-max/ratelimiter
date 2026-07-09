@@ -51,7 +51,20 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
+  grafana:
+    image: grafana/grafana-enterprise
+    ports:
+      - "3000:3000"
+    networks:
+      - rl
+  prom_server:
+    image: prom/prometheus
+    ports: 
+      - "9090:9090"
+    networks:
+      - rl
+    volumes:
+      - ./infrastructure/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
 
 volumes:
   pg_data:
