@@ -25,7 +25,15 @@ func NewRedisClient(config *config.Config) *redis.Client {
 }
 
 func NewPostgresPool(config *config.Config) *pgxpool.Pool {
-	postgresUrl := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=%v", config.Postgres.UserName, config.Postgres.Password, config.Postgres.Host, config.Postgres.Port, config.Postgres.Db, config.Postgres.SSLmode)
+	postgresUrl := fmt.Sprintf(
+		"postgres://%v:%v@%v:%v/%v?sslmode=%v", 
+		config.Postgres.UserName, 
+		config.Postgres.Password, 
+		config.Postgres.Host, 
+		config.Postgres.Port, 
+		config.Postgres.Db, 
+		config.Postgres.SSLmode,
+	)
 
 	pgxConfig, err := pgxpool.ParseConfig(postgresUrl)
 	if err != nil {

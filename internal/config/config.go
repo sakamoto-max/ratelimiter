@@ -4,12 +4,14 @@ import (
 	"errors"
 	"log"
 	"os"
+
 	"github.com/sakamoto-max/ratelimiter/internal/env"
 
 	"github.com/go-playground/validator/v10"
 )
 
 type Config struct {
+	STAGE    string
 	Grpc     GrpcConfig
 	Redis    RedisConfig
 	Postgres PostgresConfig
@@ -39,7 +41,7 @@ type PostgresConfig struct {
 	Db       string `validate:"required"`
 	UserName string `validate:"required"`
 	Password string `validate:"required"`
-	SSLmode string `validate:"required"`
+	SSLmode  string `validate:"required"`
 }
 
 type AuthConfig struct {
@@ -49,6 +51,11 @@ type AuthConfig struct {
 func New() *Config {
 
 	env.LoadEnv("../../app.env")
+
+	stage := os.Getenv("STAGE")
+	if stage == "" {
+		log.Fatalf("failed to get : %v from env", "STAGE")
+	}
 
 	grpcConfig := GrpcConfig{
 		Port: os.Getenv("GRPC_PORT"),
@@ -68,7 +75,7 @@ func New() *Config {
 		Db:       os.Getenv("POSTGRES_DB"),
 		UserName: os.Getenv("POSTGRES_USERNAME"),
 		Password: os.Getenv("POSTGRES_PASSWORD"),
-		SSLmode : os.Getenv("POSTGRES_SSL_MODE"),
+		SSLmode:  os.Getenv("POSTGRES_SSL_MODE"),
 	}
 
 	httpConfig := HTTPConfig{
@@ -80,6 +87,7 @@ func New() *Config {
 	}
 
 	config := Config{
+		STAGE:    stage,
 		Grpc:     grpcConfig,
 		Redis:    redisConfig,
 		Postgres: postgresConfig,

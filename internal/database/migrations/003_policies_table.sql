@@ -1,3 +1,5 @@
+-- Write your migrate up statements here
+
 CREATE TABLE POLICIES (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     OWNER_ID UUID NOT NULL,
@@ -8,4 +10,8 @@ CREATE TABLE POLICIES (
     CREATED_AT TIMESTAMP NOT NULL DEFAULT NOW(),
     UPDATED_AT TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (OWNER_ID) REFERENCES OWNERS(id)
-)
+);
+
+---- create above / drop below ----
+
+DROP TABLE IF EXISTS POLICIES;

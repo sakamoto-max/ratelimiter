@@ -41,6 +41,14 @@ type App struct {
 
 func New(config *config.Config) *App {
 
+	log.Printf("creating server : STAGE : %v", config.STAGE)
+
+	if config.STAGE != "local" {
+		if err := database.Migrate(context.Background(), config); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	redisClient := database.NewRedisClient(config)
 	log.Println("connected to redis")
 
@@ -53,7 +61,7 @@ func New(config *config.Config) *App {
 	reg := prometheus.NewRegistry()
 
 	interceptors := interceptors.NewInterceptors(reg)
-	
+
 	service := service.NewService(cache, db)
 
 	handler := handlers.NewHandler(service)
@@ -92,6 +100,7 @@ func New(config *config.Config) *App {
 }
 
 func (a *App) Run() {
+
 
 	lis, err := net.Listen("tcp", ":"+a.config.Grpc.Port)
 	if err != nil {
