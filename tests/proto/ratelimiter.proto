@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package rate_limiter;
+
+option go_package = "shared/rate_limiter";
+
+service RateLimiter {
+    rpc Check(CheckRequest) returns (CheckResponse);
+}
+
+message CheckRequest {
+    string clientIp = 1;
+    string resource_name = 2;
+}
+
+message CheckResponse {
+    // If skip is true, the request should be skipped (not allowed)
+    bool allowed = 1;
+    // The number of tokens left in the bucket
+    int64 tokens_left = 2;
+    // The number of seconds to wait before the next request can be made
+    int64 try_after = 3;
+    // The maximum capacity of the bucket
+    int64 bucket_capacity = 4;
+}
