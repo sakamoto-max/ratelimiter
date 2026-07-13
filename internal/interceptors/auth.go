@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/utils"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -26,9 +27,10 @@ var OwnerNameKey ctxKey = "ownername"
 
 var latencyKey ctxKey = "latency"
 
-type Auth struct {}
+type Auth struct{}
 
 func (a *Auth) UnaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+
 	timeStart := time.Now()
 
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -36,9 +38,19 @@ func (a *Auth) UnaryInterceptor(ctx context.Context, req any, info *grpc.UnarySe
 		return nil, ErrTokenIsMissing
 	}
 
-	token := md.Get("token")[0]
+	token := md.Get("token")
 
-	claims, err := utils.ValidateToken(token)
+	if len(token) == 0 {
+		return nil, fmt.Errorf("token is missing")
+	}
+
+	tokenStr := token[0]
+
+	if r := recover(); r != nil {
+		return nil, fmt.Errorf("please provide token")
+	}
+
+	claims, err := utils.ValidateToken(tokenStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate token : %w", err)
 	}
@@ -56,4 +68,3 @@ func GetOwnerName(ctx context.Context) string {
 	}
 	return val
 }
-

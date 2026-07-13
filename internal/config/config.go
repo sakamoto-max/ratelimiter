@@ -4,9 +4,6 @@ import (
 	"errors"
 	"log"
 	"os"
-
-	"github.com/sakamoto-max/ratelimiter/internal/env"
-
 	"github.com/go-playground/validator/v10"
 )
 
@@ -32,7 +29,7 @@ type RedisConfig struct {
 	Port     string `validate:"required"`
 	Db       string `validate:"required"`
 	UserName string `validate:"required"`
-	Password string `validate:"required"`
+	Password string 
 }
 
 type PostgresConfig struct {
@@ -50,7 +47,7 @@ type AuthConfig struct {
 
 func New() *Config {
 
-	env.LoadEnv("../../.env")
+	// env.LoadEnv("../../app.env")
 
 	stage := os.Getenv("STAGE")
 	if stage == "" {
