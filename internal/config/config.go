@@ -50,7 +50,7 @@ type AuthConfig struct {
 
 func New() *Config {
 
-	env.LoadEnv("../../app.env")
+	env.LoadEnv("../../.env")
 
 	stage := os.Getenv("STAGE")
 	if stage == "" {
