@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/config"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -15,13 +16,17 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(ownername string) (string, error) {
+var (
+	DefaultExpiresAt = time.Now().Add(time.Hour * 8760 * 100)
+)
+
+func GenerateToken(ownername string, expiresAt time.Time) (string, error) {
 
 	claims := &Claims{
 		Ownername: ownername,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "rate_limiter",
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 8760 * 100)),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
 	}
 

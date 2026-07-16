@@ -9,6 +9,7 @@ type Service struct {
 	Owner  *Owner
 	Grpc   *Grpc
 	Policy *Policy
+	Token  *Token
 }
 
 func NewService(cache *cache.Cache, repo *repository.Db) *Service {
@@ -16,5 +17,6 @@ func NewService(cache *cache.Cache, repo *repository.Db) *Service {
 		Owner:  &Owner{cache: cache, pg: repo},
 		Grpc:   &Grpc{Cache: cache, Pg: repo},
 		Policy: &Policy{pg: repo, cache: cache},
+		Token:  &Token{pg: repo, cache: cache},
 	}
 }

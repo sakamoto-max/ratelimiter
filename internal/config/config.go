@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -29,7 +30,7 @@ type RedisConfig struct {
 	Port     string `validate:"required"`
 	Db       string `validate:"required"`
 	UserName string `validate:"required"`
-	Password string 
+	Password string
 }
 
 type PostgresConfig struct {
@@ -47,7 +48,7 @@ type AuthConfig struct {
 
 func New() *Config {
 
-	// env.LoadEnv("../../app.env")
+	// env.LoadEnv("../../.env")
 
 	stage := os.Getenv("STAGE")
 	if stage == "" {

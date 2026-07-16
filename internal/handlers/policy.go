@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain/dto"
+	"github.com/sakamoto-max/ratelimiter/internal/middleware"
 	"github.com/sakamoto-max/ratelimiter/internal/service"
 )
 
@@ -22,7 +23,9 @@ func (p *Policy) New(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := p.service.NewPolicy(r.Context(), userInput.MapToPolicy())
+	ownerName := middleware.GetOwnerName(r.Context())
+
+	resp, err := p.service.NewPolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
 		resp := map[string]string{
 			"error": err.Error(),
@@ -50,7 +53,9 @@ func (p *Policy) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := p.service.GetPolicy(r.Context(), userInput.MapToPolicy())
+	ownerName := middleware.GetOwnerName(r.Context())
+
+	resp, err := p.service.GetPolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
 		resp := map[string]string{
 			"error": err.Error(),
@@ -81,8 +86,10 @@ func (p *Policy) Delete(w http.ResponseWriter, r *http.Request) {
 		validationErr.BadRequestErr(w)
 		return
 	}
+	
+	ownerName := middleware.GetOwnerName(r.Context())
 
-	err = p.service.DeletePolicy(r.Context(), userInput.MapToPolicy())
+	err = p.service.DeletePolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
 		resp := map[string]string{
 			"error": err.Error(),

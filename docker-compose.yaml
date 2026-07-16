@@ -40,7 +40,7 @@ services:
   rate_limiter:
     build: .
     env_file:
-      - app.env
+      - .env
     networks:
       - rl
     ports:

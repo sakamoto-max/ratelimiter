@@ -3,11 +3,11 @@
 
 CREATE TABLE TOKENS (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
     token TEXT NOT NULL,
-    owner_id UUID NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (owner_id) REFERENCES OWNERS(id)
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 ---- create above / drop below ----

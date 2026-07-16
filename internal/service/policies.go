@@ -43,6 +43,6 @@ func (p *Policy) DeletePolicy(ctx context.Context, policy domain.Policy) error {
 	return p.pg.Policy.DeletePolicy(ctx, policy)
 }
 
-func (p *Policy) NewPolicy(ctx context.Context, policy domain.Policy) (*domain.Policy, error) {
+func (p *Policy) NewPolicy(ctx context.Context,policy domain.Policy) (*domain.Policy, error) {
 	return p.pg.Policy.AddPolicy(ctx, policy)
 }

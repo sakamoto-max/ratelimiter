@@ -1,0 +1,72 @@
+handle the unique constraint in creating new token
+
+
+-- clone 
+// make account
+// initial login -> 
+    username : admin
+    password : admin
+
+// ask the user to change username and password
+// 
+
+create policies : 
+    what does it take?
+        - resource_name
+
+        - bucket_size : integer
+        - interval : should be a drop down menu : 
+                        |       |      |
+                         takes in the number | second, minute, hour, day
+
+
+/create Policy
+/update Policy
+/delete Policy
+
+
+// tokens :
+
+name : tokens
+firstToken : when created the account
+
+/new token
+/disable token
+
+/login
+/newUserName&password
+
+
+
+
+
+when user creates account  :
+{
+
+}
+{
+    http_req_token :
+
+}
+
+{
+    "id": "cec488cd-1a3a-490d-9c54-967eb1d93abd",
+    "name": "likith",
+    "email": "likith@gmail.com",
+    "created_at": "2026-07-16T15:40:56.382771Z",
+    "updated_at": "0001-01-01T00:00:00Z",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lck5hbWUiOiJsaWtpdGgiLCJpc3MiOiJyYXRlX2xpbWl0ZXIiLCJleHAiOjQ5Mzc3OTY1NTd9.lHFnUFPf2JellmBI5ZVhsnxQZhCnu2tl06xEcynpmkE"
+}
+{
+    "id": "cec488cd-1a3a-490d-9c54-967eb1d93abd",
+    "name": "likith",
+    "email": "likith@gmail.com",
+    "created_at": "2026-07-16T15:40:56.382771Z",
+    "updated_at": "0001-01-01T00:00:00Z",
+    "httpRequestToken" : "some_token",
+    "rateLimiterToken" : "",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lck5hbWUiOiJsaWtpdGgiLCJpc3MiOiJyYXRlX2xpbWl0ZXIiLCJleHAiOjQ5Mzc3OTY1NTd9.lHFnUFPf2JellmBI5ZVhsnxQZhCnu2tl06xEcynpmkE"
+}
+
+
+create_token

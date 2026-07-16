@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"math"
+
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
 	"github.com/sakamoto-max/ratelimiter/internal/interceptors"
 	"github.com/sakamoto-max/ratelimiter/internal/repository"
@@ -13,8 +14,8 @@ import (
 
 type Grpc struct {
 	rateLimiterPb.UnimplementedRateLimiterServer
-	Pg       *repository.Db
-	Cache    *cache.Cache
+	Pg    *repository.Db
+	Cache *cache.Cache
 }
 
 func (s *Grpc) Check(ctx context.Context, req *rateLimiterPb.CheckRequest) (*rateLimiterPb.CheckResponse, error) {

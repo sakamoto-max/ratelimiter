@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/domain"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	"github.com/sakamoto-max/ratelimiter/internal/utils"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,19 +60,22 @@ func (o *Owner) NewOwner(ctx context.Context, owner domain.Owner) (*domain.Owner
 		INSERT INTO
 			TOKENS
 				(
+					name,
 					token,
-					owner_id
+					expires_at
 				)
 			VALUES
 				(
+					@name,
 					@token,
-					@ownerId
+					@expires_at					
 				)
 	`
 
 	_, err = trnx.Exec(ctx, query, pgx.NamedArgs{
-		"token":   owner.Token,
-		"ownerId": ownerId,
+		"name":       "default",
+		"token":      owner.RatelimiterDefaultToken,
+		"expires_at": utils.DefaultExpiresAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert token : %w", err)
@@ -86,10 +91,7 @@ func (o *Owner) NewOwner(ctx context.Context, owner domain.Owner) (*domain.Owner
 		Name:      name,
 		Email:     email,
 		CreatedAt: createdAt,
-		Token:     owner.Token,
+		RatelimiterDefaultToken: owner.RatelimiterDefaultToken,
+		HttpReqToken: owner.HttpReqToken,
 	}, nil
 }
-
-// func (o *Owner) GetOwner(ctx context.Context, ownerName string) (domain.Owner, error)   {}
-// func (o *Owner) DeleteOwner(ctx context.Context, ownerName string) error                {}
-// func (o *Owner) UpdateOwner(ctx context.Context, owner domain.Owner) error              {}

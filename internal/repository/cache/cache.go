@@ -5,13 +5,13 @@ import (
 )
 
 type Cache struct {
-	Policy        PolicyIface
-	UserBucket    BucketIface
+	Policy     PolicyIface
+	UserBucket BucketIface
 }
 
 func NewCache(client *redis.Client) *Cache {
 	return &Cache{
-		Policy:        &Policy{Client: client},
-		UserBucket:    &Bucket{Client: client},
+		Policy:     &Policy{Client: client},
+		UserBucket: &Bucket{Client: client},
 	}
 }

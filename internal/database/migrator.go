@@ -36,7 +36,7 @@ func Migrate(ctx context.Context, config *config.Config) error {
 
 	defer conn.Close(ctx)
 
-	migrator, err := migrate.NewMigrator(ctx, conn, "SCHEMA_MIGRATIONS")
+	migrator, err := migrate.NewMigrator(ctx, conn, "SCHEMA_VERSION")
 	if err != nil {
 		return fmt.Errorf("failed to create migrator : %w", err)
 	}
