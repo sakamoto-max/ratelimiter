@@ -2,16 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain/dto"
 	"github.com/sakamoto-max/ratelimiter/internal/middleware"
+	myErr "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 	"github.com/sakamoto-max/ratelimiter/internal/service"
 )
 
 type Token struct {
 	service *service.Token
+	myErr.HttpErr
 }
 
 func (t *Token) NewToken(w http.ResponseWriter, r *http.Request) {
@@ -29,29 +30,18 @@ func (t *Token) NewToken(w http.ResponseWriter, r *http.Request) {
 
 	parsedUserInput, err := userInput.ParseNdMapToToken()
 	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		// todo
+		t.HttpErr.ErrorWriter(w, err)
 		return
 	}
 	parsedUserInput.OwnerName = ownerName
 
 	token, err := t.service.CreateToken(r.Context(), parsedUserInput)
 	if err != nil {
-
-		resp := map[string]string{
-			"error": err.Error(),
-		}
-
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(resp)
+		t.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(token)
+	RespWriter(w, token, http.StatusCreated)
 }
 
 func (t *Token) GetToken(w http.ResponseWriter, r *http.Request) {
@@ -67,15 +57,11 @@ func (t *Token) GetToken(w http.ResponseWriter, r *http.Request) {
 
 	domainToken, err := t.service.GetToken(r.Context(), userInput.Name)
 	if err != nil {
-		// todo
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		t.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(domainToken)
+	RespWriter(w, domainToken, http.StatusOK)
 }
 
 func (t *Token) DeleteToken(w http.ResponseWriter, r *http.Request) {
@@ -91,11 +77,9 @@ func (t *Token) DeleteToken(w http.ResponseWriter, r *http.Request) {
 
 	err = t.service.DeleteToken(r.Context(), userInput.Name)
 	if err != nil {
-		// todo
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		t.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	RespWriter(w, map[string]string{"message": "token deleted"}, http.StatusNoContent)
 }

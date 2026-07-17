@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	pgConn "github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	myErrs "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 )
 
 type Token struct {
@@ -36,9 +37,9 @@ func (t *Token) NewToken(ctx context.Context, token domain.Token) (*domain.Token
 	if err != nil {
 		var pgErr *pgConn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("token with name %v already exists", token.Name)
+			return nil, myErrs.WrapErr(fmt.Errorf("token with name : %v already exists", token.Name), myErrs.AlreadyExistsErr)
 		}
-		return nil, fmt.Errorf("failed to insert token : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to create token : %w", err), myErrs.InternalServerErr)
 	}
 
 	return &domain.Token{
@@ -75,10 +76,10 @@ func (t *Token) GetToken(ctx context.Context, name string) (*domain.Token, error
 	if err != nil {
 
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("token with name : %v not found", name)
+			return nil, myErrs.WrapErr(fmt.Errorf("token not found"), myErrs.NotFoundErr)
 		}
 
-		return nil, fmt.Errorf("failed to get token : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to get token : %w", err), myErrs.InternalServerErr)
 	}
 
 	return &domain.Token{
@@ -102,7 +103,7 @@ func (t *Token) DeleteToken(ctx context.Context, name string) error {
 		"name": name,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete token : %w", err)
+		return myErrs.WrapErr(fmt.Errorf("failed to delete token : %w", err), myErrs.InternalServerErr)
 	}
 
 	return nil

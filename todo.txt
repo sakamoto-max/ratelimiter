@@ -1,5 +1,5 @@
-handle the unique constraint in creating new token
-
+completed wrapping errors in repo layer.
+=
 
 -- clone 
 // make account
@@ -8,7 +8,6 @@ handle the unique constraint in creating new token
     password : admin
 
 // ask the user to change username and password
-// 
 
 create policies : 
     what does it take?
@@ -38,35 +37,35 @@ firstToken : when created the account
 
 
 
+load_test :
+
+- one gateway 
+    - 10 routes
+        - dummy 1 - 
+        - dummy 2
+        - dummy 3
+        - dummy 4
+        - dummy 5
+        - dummy 6
+        - dummy 7
+        - dummy 8
+        - dummy 9
+        - dummy 10
 
 
-when user creates account  :
-{
-
-}
-{
-    http_req_token :
-
-}
-
-{
-    "id": "cec488cd-1a3a-490d-9c54-967eb1d93abd",
-    "name": "likith",
-    "email": "likith@gmail.com",
-    "created_at": "2026-07-16T15:40:56.382771Z",
-    "updated_at": "0001-01-01T00:00:00Z",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lck5hbWUiOiJsaWtpdGgiLCJpc3MiOiJyYXRlX2xpbWl0ZXIiLCJleHAiOjQ5Mzc3OTY1NTd9.lHFnUFPf2JellmBI5ZVhsnxQZhCnu2tl06xEcynpmkE"
-}
-{
-    "id": "cec488cd-1a3a-490d-9c54-967eb1d93abd",
-    "name": "likith",
-    "email": "likith@gmail.com",
-    "created_at": "2026-07-16T15:40:56.382771Z",
-    "updated_at": "0001-01-01T00:00:00Z",
-    "httpRequestToken" : "some_token",
-    "rateLimiterToken" : "",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lck5hbWUiOiJsaWtpdGgiLCJpc3MiOiJyYXRlX2xpbWl0ZXIiLCJleHAiOjQ5Mzc3OTY1NTd9.lHFnUFPf2JellmBI5ZVhsnxQZhCnu2tl06xEcynpmkE"
-}
 
 
-create_token
+
+policy - name
+
+
+
+
+redis, pg
+2 servers
+http & grpc
+
+http -> redis, pg
+grpc -> redis, pg
+
+app -> redis, pg, 

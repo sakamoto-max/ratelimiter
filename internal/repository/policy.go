@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/domain"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	myErrs "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,7 +39,7 @@ func (p *Policy) GetPolicies(ctx context.Context, ownerName string) (*[]domain.P
 		"ownerName": ownerName,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get policies : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to get policies : %w", err), myErrs.InternalServerErr)
 	}
 
 	var allPolicies []domain.Policy
@@ -52,7 +54,7 @@ func (p *Policy) GetPolicies(ctx context.Context, ownerName string) (*[]domain.P
 	for rows.Next() {
 		err := rows.Scan(&resource, &bucketCapacity, &timeInSeconds, &refillRatePerSecond, &createdAt, &updatedAt)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan policies : %w", err)
+			return nil, myErrs.WrapErr(fmt.Errorf("failed to scan policies : %w", err), myErrs.InternalServerErr)
 		}
 
 		allPolicies = append(allPolicies, domain.Policy{
@@ -67,7 +69,7 @@ func (p *Policy) GetPolicies(ctx context.Context, ownerName string) (*[]domain.P
 	}
 
 	if len(allPolicies) == 0 {
-		return nil, fmt.Errorf("no polices found")
+		return nil, myErrs.WrapErr(fmt.Errorf("no polices found"), myErrs.NotFoundErr)
 	}
 
 	return &allPolicies, nil
@@ -107,9 +109,9 @@ func (p *Policy) GetPolicy(ctx context.Context, data domain.Policy) (domain.Poli
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.Policy{}, fmt.Errorf("policy not found")
+			return domain.Policy{}, myErrs.WrapErr(fmt.Errorf("policy not found"), myErrs.NotFoundErr)
 		}
-		return domain.Policy{}, fmt.Errorf("failed to get policy : %w", err)
+		return domain.Policy{}, myErrs.WrapErr(fmt.Errorf("failed to get policy : %w", err), myErrs.InternalServerErr)
 	}
 
 	return domain.Policy{
@@ -147,7 +149,7 @@ func (p *Policy) DeletePolicy(ctx context.Context, policy domain.Policy) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to delete policy : %w", err)
+		return myErrs.WrapErr(fmt.Errorf("failed to delete policy : %w", err), myErrs.InternalServerErr)
 	}
 
 	return nil
@@ -166,7 +168,7 @@ func (p *Policy) AddPolicy(ctx context.Context, policy domain.Policy) (*domain.P
 
 	trnx, err := p.pg.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to begin transaction : %w", err), myErrs.InternalServerErr)
 	}
 
 	defer trnx.Rollback(ctx)
@@ -177,7 +179,10 @@ func (p *Policy) AddPolicy(ctx context.Context, policy domain.Policy) (*domain.P
 		"name": policy.OwnerName,
 	}).Scan(&ownerId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get owner id : %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, myErrs.WrapErr(fmt.Errorf("owner not found"), myErrs.NotFoundErr)
+		}
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to get owner id : %w", err), myErrs.InternalServerErr)
 	}
 
 	query = `
@@ -198,12 +203,12 @@ func (p *Policy) AddPolicy(ctx context.Context, policy domain.Policy) (*domain.P
 		"timeInSeconds":  policy.IntervalInSeconds,
 	}).Scan(&refillRatePerSecond, &createdAt, &updatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to add policy : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to add policy : %w", err), myErrs.InternalServerErr)
 	}
 
 	err = trnx.Commit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to commit transaction : %w", err), myErrs.InternalServerErr)
 	}
 
 	return &domain.Policy{

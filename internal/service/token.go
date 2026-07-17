@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
 	"github.com/sakamoto-max/ratelimiter/internal/repository"
 	"github.com/sakamoto-max/ratelimiter/internal/repository/cache"
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
 )
 
 type Token struct {
@@ -20,7 +20,7 @@ func (t *Token) GetToken(ctx context.Context, name string) (*domain.Token, error
 
 func (t *Token) CreateToken(ctx context.Context, token domain.Token) (*domain.Token, error) {
 
-	newToken, err := utils.GenerateToken(token.OwnerName, token.ExpiresAt)
+	newToken, err := jwt.GenerateToken(token.OwnerName, token.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}

@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
-
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -50,7 +49,7 @@ func (a *Auth) UnaryInterceptor(ctx context.Context, req any, info *grpc.UnarySe
 		return nil, fmt.Errorf("please provide token")
 	}
 
-	claims, err := utils.ValidateToken(tokenStr)
+	claims, err := jwt.ValidateToken(tokenStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate token : %w", err)
 	}

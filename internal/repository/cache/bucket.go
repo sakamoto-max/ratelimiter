@@ -3,9 +3,11 @@ package cache
 import (
 	"context"
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/domain"
 	"strconv"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	myErr "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -15,7 +17,7 @@ type BucketIface interface {
 }
 
 type Bucket struct {
-	Client *redis.Client
+	client *redis.Client
 }
 
 func (c *Bucket) CheckLimit(ctx context.Context, userIp string, policy domain.Policy) (*domain.UserBucket, error) {
@@ -77,15 +79,13 @@ func (c *Bucket) CheckLimit(ctx context.Context, userIp string, policy domain.Po
 		return { allowed, tokens_left }
 	`)
 
-
-
 	mainKey := fmt.Sprintf("user_ip:%v:resource_name:%v:bucket", userIp, policy.ResourceName)
 
 	keys := []string{mainKey}
 
-	cmd, err := script.Eval(ctx, c.Client, keys, policy.BucketSize, policy.RefillPerSecond).Result()
+	cmd, err := script.Eval(ctx, c.client, keys, policy.BucketSize, policy.RefillPerSecond).Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to implement the redis script : %w", err)
+		return nil, myErr.WrapErr(fmt.Errorf("failed to implement the redis script : %w", err), myErr.InternalServerErr)
 	}
 
 	totalTime := time.Since(timeStart).Microseconds()
@@ -93,7 +93,7 @@ func (c *Bucket) CheckLimit(ctx context.Context, userIp string, policy domain.Po
 	data, ok := cmd.([]any)
 
 	if !ok {
-		return nil, fmt.Errorf("failed to parse the data %v from redis", data)
+		return nil, myErr.WrapErr(fmt.Errorf("failed to parse the data %v from redis", data), myErr.InternalServerErr)
 	}
 
 	var allowed int64
@@ -101,17 +101,17 @@ func (c *Bucket) CheckLimit(ctx context.Context, userIp string, policy domain.Po
 
 	allowed, ok = data[0].(int64)
 	if !ok {
-		return nil, fmt.Errorf("failed to parse the data[0] from redis")
+		return nil, myErr.WrapErr(fmt.Errorf("failed to parse the data to get allowed from redis"), myErr.InternalServerErr)
 	}
 
 	tokensLeftStr, ok := data[1].(string)
 	if !ok {
-		return nil, fmt.Errorf("failed to parse the data[1] from redis")
+		return nil, myErr.WrapErr(fmt.Errorf("failed to parse the data to get tokens left from redis"), myErr.InternalServerErr)
 	}
 
 	tokensLeft, err = strconv.ParseFloat(tokensLeftStr, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse the data[1] from redis")
+		return nil, myErr.WrapErr(fmt.Errorf("failed to parse tokens left from string to floaat : %w", err), myErr.InternalServerErr)
 	}
 
 	userBucket := domain.UserBucket{

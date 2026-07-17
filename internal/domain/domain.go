@@ -31,12 +31,11 @@ type Owner struct {
 }
 
 type Token struct {
-	Id        string `db:"id" json:"id,omitempty"`
-	Name      string `db:"name" json:"name"`
-	Token     string `db:"token" json:"token"`
-	OwnerName string `json:"ownerName"`
+	Id        string    `db:"id" json:"id,omitempty"`
+	Name      string    `db:"name" json:"name"`
+	Token     string    `db:"token" json:"token"`
+	OwnerName string    `json:"ownerName"`
 	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt,omitempty"`
 }
-

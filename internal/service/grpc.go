@@ -5,36 +5,31 @@ import (
 	"math"
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
-	"github.com/sakamoto-max/ratelimiter/internal/interceptors"
+	"github.com/sakamoto-max/ratelimiter/internal/domain/dto"
 	"github.com/sakamoto-max/ratelimiter/internal/repository"
 	"github.com/sakamoto-max/ratelimiter/internal/repository/cache"
-
-	rateLimiterPb "github.com/sakamoto-max/rate_limiter_proto/shared/rate_limiter"
 )
 
 type Grpc struct {
-	rateLimiterPb.UnimplementedRateLimiterServer
-	Pg    *repository.Db
-	Cache *cache.Cache
+	pg    *repository.Db
+	cache *cache.Cache
 }
 
-func (s *Grpc) Check(ctx context.Context, req *rateLimiterPb.CheckRequest) (*rateLimiterPb.CheckResponse, error) {
+func (s *Grpc) Check(ctx context.Context, req dto.CheckRequest) (*dto.CheckResponse, error) {
 
-	ownerName := interceptors.GetOwnerName(ctx)
-
-	policy, err := s.Cache.Policy.GetPolicy(ctx, domain.Policy{OwnerName: ownerName, ResourceName: req.ResourceName})
+	policy, err := s.cache.Policy.GetPolicy(ctx, domain.Policy{OwnerName: req.OwnerName, ResourceName: req.ResourceName})
 	if err != nil {
 		return nil, err
 	}
 
 	if policy.BucketSize == 0 {
-		policy, err = s.Pg.Policy.GetPolicy(ctx, domain.Policy{OwnerName: ownerName, ResourceName: req.ResourceName})
+		policy, err = s.pg.Policy.GetPolicy(ctx, domain.Policy{OwnerName: req.OwnerName, ResourceName: req.ResourceName})
 		if err != nil {
 			return nil, err
 		}
 
-		s.Cache.Policy.SetPolicy(ctx, domain.Policy{
-			OwnerName:         ownerName,
+		s.cache.Policy.SetPolicy(ctx, domain.Policy{
+			OwnerName:         req.OwnerName,
 			ResourceName:      req.ResourceName,
 			BucketSize:        policy.BucketSize,
 			IntervalInSeconds: policy.IntervalInSeconds,
@@ -46,7 +41,7 @@ func (s *Grpc) Check(ctx context.Context, req *rateLimiterPb.CheckRequest) (*rat
 
 	var allowed bool
 
-	userBucket, err := s.Cache.UserBucket.CheckLimit(ctx, req.ClientIp, policy)
+	userBucket, err := s.cache.UserBucket.CheckLimit(ctx, req.ClientIp, policy)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +56,7 @@ func (s *Grpc) Check(ctx context.Context, req *rateLimiterPb.CheckRequest) (*rat
 		tryAfter = calculateRetryAfter(userBucket.TokensLeft, policy)
 	}
 
-	return &rateLimiterPb.CheckResponse{
+	return &dto.CheckResponse{
 		Allowed:        allowed,
 		TokensLeft:     int64(userBucket.TokensLeft),
 		BucketCapacity: int64(policy.BucketSize),

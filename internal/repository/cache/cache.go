@@ -11,7 +11,7 @@ type Cache struct {
 
 func NewCache(client *redis.Client) *Cache {
 	return &Cache{
-		Policy:     &Policy{Client: client},
-		UserBucket: &Bucket{Client: client},
+		Policy:     &Policy{client: client},
+		UserBucket: &Bucket{client: client},
 	}
 }

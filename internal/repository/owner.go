@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	pgConn "github.com/jackc/pgx/v5/pgconn"
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
+	myErrs "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,7 +40,7 @@ func (o *Owner) NewOwner(ctx context.Context, owner domain.Owner) (*domain.Owner
 
 	trnx, err := o.pg.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to begin transaction : %w", err), myErrs.InternalServerErr)
 	}
 
 	defer trnx.Rollback(ctx)
@@ -53,7 +56,7 @@ func (o *Owner) NewOwner(ctx context.Context, owner domain.Owner) (*domain.Owner
 		"password": owner.Password,
 	}).Scan(&ownerId, &name, &email, &createdAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create owner : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to create owner : %w", err), myErrs.InternalServerErr)
 	}
 
 	query = `
@@ -75,23 +78,27 @@ func (o *Owner) NewOwner(ctx context.Context, owner domain.Owner) (*domain.Owner
 	_, err = trnx.Exec(ctx, query, pgx.NamedArgs{
 		"name":       "default",
 		"token":      owner.RatelimiterDefaultToken,
-		"expires_at": utils.DefaultExpiresAt,
+		"expires_at": jwt.DefaultExpiresAt,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert token : %w", err)
+		var pgErr *pgConn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "tokens_name_key" {
+			return nil, myErrs.WrapErr(fmt.Errorf("user already exists"), myErrs.AlreadyExistsErr)
+		}
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to create default token : %w", err), myErrs.InternalServerErr)
 	}
 
 	err = trnx.Commit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction : %w", err)
+		return nil, myErrs.WrapErr(fmt.Errorf("failed to commit transaction : %w", err), myErrs.InternalServerErr)
 	}
 
 	return &domain.Owner{
-		Id:        ownerId,
-		Name:      name,
-		Email:     email,
-		CreatedAt: createdAt,
+		Id:                      ownerId,
+		Name:                    name,
+		Email:                   email,
+		CreatedAt:               createdAt,
 		RatelimiterDefaultToken: owner.RatelimiterDefaultToken,
-		HttpReqToken: owner.HttpReqToken,
+		HttpReqToken:            owner.HttpReqToken,
 	}, nil
 }

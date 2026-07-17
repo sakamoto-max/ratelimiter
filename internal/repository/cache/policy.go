@@ -3,15 +3,17 @@ package cache
 import (
 	"context"
 	"fmt"
-	"github.com/sakamoto-max/ratelimiter/internal/domain"
 	"strconv"
 	"time"
+
+	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	myErr "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type Policy struct {
-	Client *redis.Client
+	client *redis.Client
 }
 
 type PolicyIface interface {
@@ -32,7 +34,7 @@ func (c *Policy) SetPolicy(ctx context.Context, policy domain.Policy) {
 	createdAtKey := "created_at"
 	updatedAtKey := "updated_at"
 
-	c.Client.HSet(ctx, mainKey,
+	c.client.HSet(ctx, mainKey,
 		bucketSizeKey, policy.BucketSize,
 		intervalInSecondsKey, policy.IntervalInSeconds,
 		refillPerSecondKey, policy.RefillPerSecond,
@@ -50,9 +52,9 @@ func (c *Policy) GetPolicy(ctx context.Context, policy domain.Policy) (domain.Po
 	createdAtKey := "created_at"
 	updatedAtKey := "updated_at"
 
-	cmd, err := c.Client.HGetAll(ctx, mainKey).Result()
+	cmd, err := c.client.HGetAll(ctx, mainKey).Result()
 	if err != nil {
-		return domain.Policy{}, fmt.Errorf("failed to get policy of resource %v and owner %v : %w", policy.ResourceName, policy.OwnerName, err)
+		return domain.Policy{}, myErr.WrapErr(fmt.Errorf("failed to get policy of resource %v and owner %v : %w", policy.ResourceName, policy.OwnerName, err), myErr.InternalServerErr)
 	}
 
 	if len(cmd) == 0 {
@@ -79,9 +81,9 @@ func (c *Policy) GetPolicy(ctx context.Context, policy domain.Policy) (domain.Po
 func (c *Policy) DeletePolicy(ctx context.Context, policy domain.Policy) error {
 	mainKey := fmt.Sprintf("owner_name:%v:resource_name:%v", policy.OwnerName, policy.ResourceName)
 
-	err := c.Client.Del(ctx, mainKey).Err()
+	err := c.client.Del(ctx, mainKey).Err()
 	if err != nil {
-		return fmt.Errorf("failed to delete policy : %w", err)
+		return myErr.WrapErr(fmt.Errorf("failed to delete policy : %w", err), myErr.InternalServerErr)
 	}
 
 	return nil

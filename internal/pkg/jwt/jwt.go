@@ -1,10 +1,11 @@
-package utils
+package jwt
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/sakamoto-max/ratelimiter/internal/config"
+	myErr "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -34,7 +35,7 @@ func GenerateToken(ownername string, expiresAt time.Time) (string, error) {
 
 	tokenStr, err := token.SignedString([]byte(SECRETKEY))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate token : %w", err)
+		return "", myErr.WrapErr(fmt.Errorf("failed to generate token : %w", err), myErr.InternalServerErr)
 	}
 
 	return tokenStr, nil
@@ -48,16 +49,16 @@ func ValidateToken(userSentToken string) (*Claims, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse token : %w", err)
+		return nil, myErr.WrapErr(fmt.Errorf("failed to parse token : %w", err), myErr.UnauthorizedErr)
 	}
 
 	if !token.Valid {
-		return nil, fmt.Errorf("token is invalid")
+		return nil, myErr.WrapErr(fmt.Errorf("token is invalid"), myErr.UnauthorizedErr)
 	}
 
 	return claims, nil
 }
 
-func AuthInit(config *config.Config) {
+func Init(config *config.Config) {
 	SECRETKEY = config.Auth.SecretKey
 }

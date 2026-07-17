@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
 )
 
 type Middleware struct {
@@ -33,7 +33,7 @@ func (a *Middleware) Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := utils.ValidateToken(token)
+		claims, err := jwt.ValidateToken(token)
 		if err != nil {
 			resp := map[string]string{
 				"message": "token is invalid",

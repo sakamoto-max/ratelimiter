@@ -6,11 +6,13 @@ import (
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain/dto"
 	"github.com/sakamoto-max/ratelimiter/internal/middleware"
+	myErr "github.com/sakamoto-max/ratelimiter/internal/pkg/myerrors"
 	"github.com/sakamoto-max/ratelimiter/internal/service"
 )
 
 type Policy struct {
 	service *service.Policy
+	myErr.HttpErr
 }
 
 func (p *Policy) New(w http.ResponseWriter, r *http.Request) {
@@ -27,19 +29,12 @@ func (p *Policy) New(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := p.service.NewPolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
-		resp := map[string]string{
-			"error": err.Error(),
-		}
 
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(resp)
+		p.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	RespWriter(w, resp, http.StatusCreated)
 }
 
 func (p *Policy) Get(w http.ResponseWriter, r *http.Request) {
@@ -57,19 +52,11 @@ func (p *Policy) Get(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := p.service.GetPolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
-		resp := map[string]string{
-			"error": err.Error(),
-		}
-
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(resp)
+		p.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
+	RespWriter(w, resp, http.StatusOK)
 }
 
 func (p *Policy) Patch(w http.ResponseWriter, r *http.Request) {
@@ -86,21 +73,15 @@ func (p *Policy) Delete(w http.ResponseWriter, r *http.Request) {
 		validationErr.BadRequestErr(w)
 		return
 	}
-	
+
 	ownerName := middleware.GetOwnerName(r.Context())
 
 	err = p.service.DeletePolicy(r.Context(), userInput.MapToPolicy(ownerName))
 	if err != nil {
-		resp := map[string]string{
-			"error": err.Error(),
-		}
 
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(resp)
+		p.HttpErr.ErrorWriter(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
+	RespWriter(w, map[string]string{"message": "policy deleted"}, http.StatusNotFound)
 }

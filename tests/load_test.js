@@ -26,8 +26,6 @@ export default function () {
         }
     });
 
-    // check(res, {});
-
     console.log(JSON.stringify(res.message));
 
 }

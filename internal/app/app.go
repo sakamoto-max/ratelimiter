@@ -14,11 +14,11 @@ import (
 	"github.com/sakamoto-max/ratelimiter/internal/database"
 	"github.com/sakamoto-max/ratelimiter/internal/handlers"
 	"github.com/sakamoto-max/ratelimiter/internal/interceptors"
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
 	"github.com/sakamoto-max/ratelimiter/internal/repository"
 	"github.com/sakamoto-max/ratelimiter/internal/repository/cache"
 	"github.com/sakamoto-max/ratelimiter/internal/routes"
 	"github.com/sakamoto-max/ratelimiter/internal/service"
-	"github.com/sakamoto-max/ratelimiter/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -68,7 +68,7 @@ func New(config *config.Config) *App {
 
 	router := routes.NewRouter(handler, reg)
 
-	utils.AuthInit(config)
+	jwt.Init(config)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -85,7 +85,7 @@ func New(config *config.Config) *App {
 		Handler: router,
 	}
 
-	rateLimiterPb.RegisterRateLimiterServer(grpcServer, service.Grpc)
+	rateLimiterPb.RegisterRateLimiterServer(grpcServer, handler.Grpc)
 
 	return &App{
 		HttpPort:    config.Http.Port,
@@ -101,33 +101,36 @@ func New(config *config.Config) *App {
 
 func (a *App) Run() {
 
+	go a.StartHttpServer()
 
-	lis, err := net.Listen("tcp", ":"+a.config.Grpc.Port)
-	if err != nil {
-		log.Fatalf("failed to listen to tcp : %v", err)
-	}
-
-	go func() {
-		log.Printf("http server has started on %v", a.HttpPort)
-		if err := a.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("failed to start http server : %v", err)
-		}
-	}()
+	go a.StartGrpcServer()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
-
-	go func() {
-		log.Printf("grpc server has started on %v", a.config.Grpc.Port)
-		if err := a.grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to start grpc server : %v", err)
-		}
-	}()
 
 	sig := <-sigChan
 	log.Printf("received signal %v, shutting down", sig)
 
 	a.Shutdown()
+}
+
+func (a *App) StartHttpServer() {
+	log.Printf("http server has started on %v", a.HttpPort)
+	if err := a.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("failed to start http server : %v", err)
+	}
+}
+
+func (a *App) StartGrpcServer() {
+	lis, err := net.Listen("tcp", ":"+a.config.Grpc.Port)
+	if err != nil {
+		log.Fatalf("failed to listen to tcp : %v", err)
+	}
+
+	log.Printf("grpc server has started on %v", a.config.Grpc.Port)
+	if err := a.grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to start grpc server : %v", err)
+	}
 }
 
 func (a *App) Shutdown() {

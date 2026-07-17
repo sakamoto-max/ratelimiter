@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sakamoto-max/ratelimiter/internal/domain"
+	"github.com/sakamoto-max/ratelimiter/internal/pkg/jwt"
 	"github.com/sakamoto-max/ratelimiter/internal/repository"
 	"github.com/sakamoto-max/ratelimiter/internal/repository/cache"
 	"github.com/sakamoto-max/ratelimiter/internal/utils"
@@ -16,12 +17,12 @@ type Owner struct {
 
 func (o *Owner) CreateOwner(ctx context.Context, owner domain.Owner) (*domain.Owner, error) {
 
-	Httptoken, err := utils.GenerateToken(owner.Name, utils.DefaultExpiresAt)
+	Httptoken, err := jwt.GenerateToken(owner.Name, jwt.DefaultExpiresAt)
 	if err != nil {
 		return nil, err
 	}
 
-	rlToken, err := utils.GenerateToken(owner.Name, utils.DefaultExpiresAt)
+	rlToken, err := jwt.GenerateToken(owner.Name, jwt.DefaultExpiresAt)
 	if err != nil {
 		return nil, err
 	}
