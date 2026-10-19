@@ -1,0 +1,90 @@
+# make redis
+# make postgres
+# make limiter
+
+networks:
+  rl:
+    driver: bridge
+  
+services:
+  postgres:
+    build: infrastructure/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - pg_data:/var/lib/postgresql
+    networks:
+      - rl
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+  redis:
+    image: redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rl
+  rate_limiter:
+    build: .
+    env_file:
+      - .env
+    networks:
+      - rl
+    ports:
+      - "6000:6000"
+      - "6003:6003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  grafana:
+    image: grafana/grafana-enterprise
+    ports:
+      - "3000:3000"
+    networks:
+      - rl
+    volumes:
+      - grafana-data:/var/lib/grafana
+  prom_server:
+    image: prom/prometheus
+    ports: 
+      - "9090:9090"
+    networks:
+      - rl
+    volumes:
+      - ./infrastructure/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+  jaeger:
+    image: jaegertracing/jaeger:2.11.0
+    container_name: jaeger
+    networks:
+      - rl
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    restart: unless-stopped 
+
+volumes:
+  pg_data:
+  redis_data:
+  grafana-data:
+  prometheus-data:
+
+
+
+
